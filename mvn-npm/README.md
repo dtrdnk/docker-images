@@ -1,0 +1,1 @@
+Non-root maven + npm builder docker image
