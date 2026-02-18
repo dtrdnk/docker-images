@@ -23,9 +23,40 @@ env:
 
 
 jobs:
-  build:
-
+  changed-dirs:
+    name: Detect changed app directories
     runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.filter.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get changed Dockerfile directories
+        id: filter
+        run: |
+          # Get changed files in the last commit (on master only)
+          CHANGED=$(git diff --name-only ${{ github.sha }}^ ${{ github.sha }})
+          DIRS=""
+          for path in $CHANGED; do
+            case "$path" in
+              */Dockerfile)
+                dir=$(dirname "$path")
+                if [[ ! "$DIRS" =~ $dir ]]; then
+                  DIRS="$DIRS,$dir"
+                fi
+                ;;
+            esac
+          done
+          DIRS=${DIRS#,}
+          echo "Detected changed dirs: $DIRS"
+          echo "dirs=$DIRS" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    needs: changed-dirs
+    if: ${{ needs.changed-dirs.outputs.dirs != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [ ${ { needs.changed-dirs.outputs.dirs } } ]
     permissions:
       contents: read
       packages: write
