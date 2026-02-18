@@ -33,30 +33,33 @@ jobs:
       - name: Get changed Dockerfile directories
         id: filter
         run: |
-          # Get changed files in the last commit (on master only)
           CHANGED=$(git diff --name-only ${{ github.sha }}^ ${{ github.sha }})
-          DIRS=""
+          DIRS=()
           for path in $CHANGED; do
             case "$path" in
               */Dockerfile)
                 dir=$(dirname "$path")
-                if [[ ! "$DIRS" =~ $dir ]]; then
-                  DIRS="$DIRS,$dir"
+                if [[ ! " ${DIRS[@]} " =~ " $dir " ]]; then
+                  DIRS+=("$dir")
                 fi
                 ;;
             esac
           done
-          DIRS=${DIRS#,}
-          echo "Detected changed dirs: $DIRS"
-          echo "dirs=$DIRS" >> $GITHUB_OUTPUT
+          echo "Detected changed dirs: ${DIRS[@]}"
+          # Create JSON array using jq (preinstalled)
+          if [[ ${#DIRS[@]} -eq 0 ]]; then
+            echo "dirs=[]" >> $GITHUB_OUTPUT
+          else
+            echo "dirs=$(jq -c -n '$ARGS.positional' --args "${DIRS[@]}")" >> $GITHUB_OUTPUT
+          fi
 
   build-and-push:
     needs: changed-dirs
-    if: ${{ needs.changed-dirs.outputs.dirs != '' }}
+    if: ${{ needs.changed-dirs.outputs.dirs != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [${{ needs.changed-dirs.outputs.dirs }}]
+        dir: ${{ fromJson(needs.changed-dirs.outputs.dirs) }}
     permissions:
       contents: read
       packages: write
