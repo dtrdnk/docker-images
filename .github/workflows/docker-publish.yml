@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [ ${{ needs.changed-dirs.outputs.dirs }} ]
+        dir: [${{ needs.changed-dirs.outputs.dirs }}]
     permissions:
       contents: read
       packages: write
