@@ -101,6 +101,17 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Determine Docker image tag
+        id: taggen
+        run: |
+          TAG=""
+          if [ -f "${{ matrix.dir }}/VERSION" ]; then
+            TAG=$(cat "${{ matrix.dir }}/VERSION")
+          else
+            TAG=${GITHUB_SHA::7}
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
