@@ -21,4 +21,3 @@ WORKDIR /app
 ENTRYPOINT ["/bin/bash", "/app/watch_lvm.sh"]
 
 USER apps:apps
-
